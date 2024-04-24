@@ -1,0 +1,97 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xobjectstorages.crossplane.hanse-merkur.de
+spec:
+  writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: crossplane.hanse-merkur.de/v1alpha1
+    kind: XObjectStorage
+  patchSets:
+    - name: bucketNameAndRegionPatchSet
+      patches:
+      - fromFieldPath: "spec.parameters.bucketName"
+        toFieldPath: "metadata.name"
+      - fromFieldPath: "spec.parameters.region"
+        toFieldPath: "spec.forProvider.region"
+  resources:
+    - name: Bucket
+      base:
+        apiVersion: s3.aws.upbound.io/v1beta1
+        kind: Bucket
+        spec:
+          forProvider:
+            region: "eu-central-1"
+      patches:
+        - type: PatchSet
+          patchSetName: bucketNameAndRegionPatchSet
+        - fromFieldPath: "spec.parameters.bucketName"
+          toFieldPath: "metadata.labels['crossplane.hanse-merkur.de/bucketname']"
+    - name: BucketPublicAccessBlock
+      base:
+        apiVersion: s3.aws.upbound.io/v1beta1
+        kind: BucketPublicAccessBlock
+        spec:
+          forProvider:
+            blockPublicAcls: false
+            blockPublicPolicy: false
+            ignorePublicAcls: false
+            restrictPublicBuckets: false
+      patches:
+        - type: PatchSet
+          patchSetName: bucketNameAndRegionPatchSet
+        # Bucket Name Label
+        - fromFieldPath: "spec.parameters.bucketName"
+          toFieldPath: "spec.forProvider.bucketSelector.matchLabels['crossplane.hanse-merkur.de/bucketname']"
+    - name: BucketOwnershipControls
+      base:
+        apiVersion: s3.aws.upbound.io/v1beta1
+        kind: BucketOwnershipControls
+        metadata:
+          name: example
+        spec:
+          forProvider:
+            rule:
+              - objectOwnership: BucketOwnerPreferred
+      patches:
+        - type: PatchSet
+          patchSetName: bucketNameAndRegionPatchSet
+        # Bucket Name Label
+        - fromFieldPath: "spec.parameters.bucketName"
+          toFieldPath: "spec.forProvider.bucketSelector.matchLabels['crossplane.hanse-merkur.de/bucketname']"
+    - name: BucketACL
+      base:
+        apiVersion: s3.aws.upbound.io/v1beta1
+        kind: BucketACL
+        spec:
+          forProvider:
+            acl: "public-read"
+      patches:
+        - type: PatchSet
+          patchSetName: bucketNameAndRegionPatchSet
+        # Bucket Name Label
+        - fromFieldPath: "spec.parameters.bucketName"
+          toFieldPath: "spec.forProvider.bucketSelector.matchLabels['crossplane.hanse-merkur.de/bucketname']"
+    - name: BucketWebsiteConfiguration
+      base:
+        apiVersion: s3.aws.upbound.io/v1beta1
+        kind: BucketWebsiteConfiguration
+        metadata:
+          name: example
+        spec:
+          forProvider:
+            errorDocument:
+              - key: error.html
+            indexDocument:
+              - suffix: index.html
+            routingRule:
+              - condition:
+                  - keyPrefixEquals: docs/
+                redirect:
+                  - replaceKeyPrefixWith: documents/
+      patches:
+        - type: PatchSet
+          patchSetName: bucketNameAndRegionPatchSet
+        # Bucket Name Label
+        - fromFieldPath: "spec.parameters.bucketName"
+          toFieldPath: "spec.forProvider.bucketSelector.matchLabels['crossplane.hanse-merkur.de/bucketname']"

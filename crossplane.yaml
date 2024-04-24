@@ -1,0 +1,18 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: crossplane-s3
+  annotations:
+    meta.crossplane.io/maintainer: You <myself@me.io>
+    meta.crossplane.io/source: github.com/your-organization/your-repo
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: |
+      This is where you can describe your configuration.
+    meta.crossplane.io/readme: |
+      This is where you can add a readme for your configuration.
+spec:
+  dependsOn:
+    - provider: xpkg.upbound.io/upbound/provider-aws-s3
+      version: ">=v1.1.1"
+  crossplane:
+    version: ">=v1.15.1-0"
